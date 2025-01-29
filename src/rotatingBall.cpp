@@ -3,56 +3,54 @@
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
-const int BALL_RADIUS = 40;
+const int BALL_RADIUS = 50;
+const int LINE_LENGTH = 50; // Length of the rotating indicator line
 
 float ball_x = SCREEN_WIDTH / 2;
 float ball_y = SCREEN_HEIGHT / 2;
-float ball_speed = 5.0f;
-float angle = 0.0f; // Rotation angle of ball
+float ball_speed_x = 4.0f;
+float ball_speed_y = 3.0f;
+float angle = 0.0f; // Rotation angle in degrees
 
 int main() {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Textured Rotating Ball");
-
-    // Load ball texture (should be a circular image with transparency)
-    Texture2D ballTexture = LoadTexture("ball.png");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Rotating Ball with Indicator Line");
 
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
-        // Rotate the ball continuously
-        angle += 2.0f;
-        if (angle >= 360.0f) angle -= 360.0f;
-
-        // Move the ball
-        float angleRad = angle * (PI / 180.0f);
-        ball_x += ball_speed * cos(angleRad);
-        ball_y += ball_speed * sin(angleRad);
+        // Move ball
+        ball_x += ball_speed_x;
+        ball_y += ball_speed_y;
 
         // Bounce off walls
         if (ball_x + BALL_RADIUS >= SCREEN_WIDTH || ball_x - BALL_RADIUS <= 0) {
-            angle = 180.0f - angle;
+            ball_speed_x *= -1;
         }
         if (ball_y + BALL_RADIUS >= SCREEN_HEIGHT || ball_y - BALL_RADIUS <= 0) {
-            angle = -angle;
+            ball_speed_y *= -1;
         }
 
-        // Draw everything
+        // Rotate the indicator line based on movement
+        angle += 4.0f; // Increase rotation speed
+        if (angle >= 360.0f) angle -= 360.0f;
+
+        // Calculate line end position using rotation
+        float angleRad = angle * (PI / 180.0f);
+        float line_x = ball_x + cos(angleRad) * LINE_LENGTH;
+        float line_y = ball_y + sin(angleRad) * LINE_LENGTH;
+
         BeginDrawing();
-        ClearBackground(WHITE);
+        ClearBackground(BLACK);
 
-        // Draw a circular mask behind the texture (to ensure the shape looks circular)
-        DrawCircle(ball_x, ball_y, BALL_RADIUS * 0.75, BLACK);
+        // Draw the ball as a filled circle
+        DrawCircle(ball_x, ball_y, BALL_RADIUS, BLUE);
 
-        // Draw the rotated ball texture with transparency
-        Rectangle source = {0, 0, (float)ballTexture.width, (float)ballTexture.height}; // Full texture
-        Rectangle dest = {ball_x, ball_y, BALL_RADIUS * 1.8, BALL_RADIUS * 1.5}; // Scale to ball size
-        Vector2 origin = {(float)BALL_RADIUS, (float)BALL_RADIUS}; // Rotate around center
-        DrawTexturePro(ballTexture, source, dest, origin, angle, WHITE);
+        // Draw the rotating indicator line
+        DrawLineEx((Vector2){ball_x, ball_y}, (Vector2){line_x, line_y}, 4, RED);
 
         EndDrawing();
     }
 
-    UnloadTexture(ballTexture); // Free texture memory
     CloseWindow();
     return 0;
 }
