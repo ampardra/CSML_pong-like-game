@@ -6,6 +6,7 @@ using namespace std;
 
 //extern assembly functions for update
 extern "C" void update_ball(float* x, float* y, float* x_speed, float* y_speed, int radius, float* spin);
+extern "C" void update_ball_movement(float* y, float* time, float range, int mode, float gravity, float* y_speed, float spin, float* angle);
 
 
 //constants 
@@ -58,14 +59,7 @@ class Ball {
         void Update() {
             update_ball(&x, &y, &x_speed, &y_speed, radius, &spin);
             
-            if (mode == SIN)
-            {
-                y += range * cos(time);
-                time += 5 / range;
-            }
-            if (mode == CURVE)
-                y_speed += gravity;
-            angle += spin;
+            update_ball_movement(&y, &time, range, mode, gravity, &y_speed, spin, &angle);
             
             if (IsKeyDown(KEY_S))
                 if (mode != SIN)
