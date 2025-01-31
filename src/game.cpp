@@ -7,6 +7,7 @@ using namespace std;
 //extern assembly functions for update
 extern "C" void update_ball(float* x, float* y, float* x_speed, float* y_speed, int radius, float* spin);
 extern "C" void update_ball_movement(float* y, float* time, float range, int mode, float gravity, float* y_speed, float spin, float* angle);
+extern "C" void update_mode_controls(int* mode, float* time, float* range, float* x_speed, float* y_speed);
 
 
 //constants 
@@ -58,40 +59,21 @@ class Ball {
         //update function which will replace with assembly code 
         void Update() {
             update_ball(&x, &y, &x_speed, &y_speed, radius, &spin);
-            
-            update_ball_movement(&y, &time, range, mode, gravity, &y_speed, spin, &angle);
-            
-            if (IsKeyDown(KEY_S))
-                if (mode != SIN)
-                {
+            int MODE = mode;
+            update_ball_movement(&y, &time, range, MODE, gravity, &y_speed, spin, &angle);
+            update_mode_controls(&MODE, &time, &range, &x_speed, &y_speed);
+            switch (MODE)
+            {
+                case 0:
+                    mode = LINE;
+                    break;
+                case 1:
                     mode = SIN;
-                    time = 0;
-                } else {
-                    mode = LINE;
-                    time = 0;
-                }
-            if (IsKeyDown(KEY_L))
-                if (mode != LINE)
-                {
-                    mode = LINE;
-                    time = 0;
-                }
-            if (IsKeyDown(KEY_C))
-                if (mode != CURVE)
-                {
+                    break;
+                default:
                     mode = CURVE;
-                    time = 0;
-                } else {
-                    x_speed = -5;
-                    y_speed = -5;
-                    mode = LINE;
-                }
-            if (IsKeyDown(KEY_E))
-                range += 2;
-            if (IsKeyDown(KEY_Q))
-                if (range != 5)
-                    range -= 2;
-            
+                    break;
+            }
             
             UpdateTrail();
         }  
