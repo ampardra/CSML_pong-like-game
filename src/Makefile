@@ -9,9 +9,10 @@ NASMFLAGS = -f elf64
 
 # Directories
 BUILD_DIR = build
-SRC_CPP = main.cpp
-SRC_ASM = update_ball.s update_ball_movement.s update_mode_controls.s \
-          update_ai_paddle.s collision_with_ball.s limit_movements.s
+SRC_CPP = asm_game.cpp
+SRC_ASM = update_ball.s update_ball_movement.s update_key_s.s update_key_l.s \
+          update_ai_paddle.s collision_with_ball.s limit_movements.s \
+		  update_paddle_movement.s update_key_c.s update_key_range.s
 
 # Object files in build directory
 OBJ_CPP = $(SRC_CPP:%.cpp=$(BUILD_DIR)/%.o)

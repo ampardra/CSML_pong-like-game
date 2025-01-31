@@ -1,57 +1,59 @@
 section .text
-global update_ball_movement
+    global update_ball_movement
 
 update_ball_movement:
-    ; Parameters:
-    ; RDI -> y (pointer)
-    ; RSI -> time (pointer)
-    ; RDX -> range (value)
-    ; RCX -> mode (value)
-    ; XMM0 -> gravity (value)
-    ; R8  -> y_speed (pointer)
-    ; XMM1 -> spin (value)
-    ; R9  -> angle (pointer)
-
+    ; Parameters (System V ABI)
+    ; rdi -> y (pointer, float)
+    ; rsi -> time (pointer, float)
+    ; edx -> range (integer)
+    ; ecx -> mode (integer)
+    ; xmm0 -> gravity (float)
+    ; r8 -> y_speed (pointer, float)
+    ; r9 -> angle (pointer, float)
+    ; xmm1 -> spin (float)
     push rbp
     mov rbp, rsp
+    sub rsp, 16  ; Allocate space for temporary float storage
 
-    ; Check if mode == SIN
-    cmp rcx, 1
-    jne .check_curve
+    cmp ecx, 1
+    jne .curve_check 
+    ; Load time into FPU stack
+    fld dword [rsi]     ; ST0 = time
+    fsin                ; ST0 = cos(time)
+    
+    ; Convert range (integer) to float
+    cvtsi2ss xmm0, edx  ; xmm0 = (float)range
+    movss [rsp], xmm0   ; Store the float range in memory
 
-    ; Compute cos(time) * range and add to y
-    fld dword [rsi]   ; Load time into FPU stack (ST0 = time)
-    fcos              ; Compute cos(time), ST0 = cos(time)
-    fmul dword [rdx]  ; Multiply by range, ST0 = cos(time) * range
-    fadd dword [rdi]  ; Add to y, ST0 = y + cos(time) * range
-    fstp dword [rdi]  ; Store result in y and pop FPU stack
+    ; Multiply cos(time) * range
+    fmul dword [rsp]    ; ST0 = cos(time) * range
 
-    ; Update time: time += 5 / range
-    fild dword [five]   ; Load 5 into FPU stack (ST0 = 5)
-    fdiv dword [rdx]    ; Divide by range, ST0 = 5 / range
-    fadd dword [rsi]    ; time += 5 / range
-    fstp dword [rsi]    ; Store result in time and pop FPU stack
+    ; Load y and add the result
+    fadd dword [rdi]    ; ST0 = y + cos(time) * range
+    fstp dword [rdi]    ; Store back into y and pop FPU stack
 
-.check_curve:
-    cmp rcx, 2
-    jne .end
+    ; Update time: time += 5.0 / range
+    mov eax, 5
+    cvtsi2ss xmm1, eax  ; xmm1 = 5.0
+    divss xmm1, [rsp]   ; xmm1 = 5.0 / range
+    addss xmm1, [rsi]   ; time += (5.0 / range)
+    movss [rsi], xmm1   ; Store updated time
+    jmp .done
+.curve_check:
+    cmp ecx, 2
+    jne .done
+    movss xmm2, [r8]   ; Load y_speed
+    addss xmm2, xmm0   ; Add gravity
+    movss [r8], xmm2
 
-    ; y_speed += gravity (load y_speed, add gravity, store back)
-    movss xmm2, [r8]     ; Load y_speed into xmm2
-    addss xmm2, xmm0     ; Add gravity
-    movss [r8], xmm2     ; Store back to y_speed
 
-.end:
-    ; angle += spin (load angle, add spin, store back)
-    movss xmm3, [r9]     ; Load angle into xmm3
-    addss xmm3, xmm1     ; Add spin
-    movss [r9], xmm3     ; Store back to angle
-
+.done:
+    movss xmm2, [r9]   ; Load angle
+    addss xmm2, xmm1   ; Add spin
+    movss [r9], xmm2
     xor rax, rax
+    add rsp, 16  ; Restore stack
     leave
     ret
 
-section .data
-five dd 5.0   ; Constant value for division
-
-section	.note.GNU-stack
+section .note.GNU-stack

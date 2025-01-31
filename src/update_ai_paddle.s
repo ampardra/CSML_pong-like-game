@@ -1,42 +1,41 @@
 section .text
-global update_ai_paddle
+    global update_ai_paddle
 
 update_ai_paddle:
-    ; Arguments:
-    ; rdi -> pointer to AI Paddle y position
-    ; rsi -> AI Paddle speed
-    ; rdx -> Ball y position
     push rbp
     mov rbp, rsp
 
-    movss xmm0, [rdx]   ; Load ball.y into xmm0
-    subss xmm0, dword [rel five]  ; ball.y - 5
-    ucomiss xmm0, [rdi] ; Compare (ball.y - 5) with y
-    jg .check_lower     ; If greater, check lower condition
+    ; Load paddle y position
+    mov rax, rdi       ; rdi contains pointer to y
+    movss xmm2, [rax]  ; Load *y into xmm2
 
-    movss xmm3, [rdi]    ; Load y into xmm3
-    subss xmm3, xmm1     ; y -= speed
-    movss [r9], xmm3  
+    ; Compare ball_y - 5 with y
+    movss xmm3, xmm1    ; Copy ball_y to xmm3
+    subss xmm3, dword [five]  ; ball_y - 5
+    ucomiss xmm3, xmm2  ; Compare (ball_y - 5) with y
+    jbe .move_up      ; If (ball_y - 5) <= y, move up
 
-    jmp .done
+    movss xmm3, xmm1  ; Copy ball_y to xmm3
+    addss xmm3, dword [one_hundred_ten] ; ball_y + 110
+    ucomiss xmm3, xmm2  ; Compare (ball_y - 5) with y
+    jae .move_down  ; If (ball_y + 110) >= y, move down
+.move_up:
+    ; Move up
+    subss xmm2, xmm0   ; y -= speed
+    jmp .store_y
 
-.check_lower:
-    movss xmm0, [rdx]   ; Load ball.y again
-    addss xmm0, dword [rel one_ten] ; ball.y + 110
-    ucomiss xmm0, [rdi] ; Compare (ball.y + 110) with y
-    jl .done            ; If less, do nothing
+.move_down:
+    addss xmm2, xmm0   ; y += speed
 
-    movss xmm3, [rdi]    ; Load y into xmm3
-    addss xmm3, xmm1   ; y += speed
-    movss [rdi], xmm3  
+.store_y:
+    movss [rax], xmm2  ; Store updated y back to memory
 
-.done:
     xor rax, rax
     leave
     ret
 
 section .data
-five: dd 5.0
-one_ten: dd 110.0
+    five dd 5.0
+    one_hundred_ten dd 110.0         
 
-section	.note.GNU-stack
+section .note.GNU-stack
