@@ -4,6 +4,10 @@
 #include <queue>
 using namespace std;
 
+//extern assembly functions for update
+extern "C" void update_ball(float* x, float* y, float* x_speed, float* y_speed, int radius, float* spin);
+
+
 //constants 
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 800;
@@ -52,24 +56,7 @@ class Ball {
         }
         //update function which will replace with assembly code 
         void Update() {
-            x += x_speed;
-            y += y_speed;
-            if(x + radius >= SCREEN_WIDTH || x - radius <= 0) {
-                if (x_speed >= 0)
-                    spin -= 2;
-                else spin += 2;
-                x_speed *= -1;
-            }    
-
-            if(y + radius >= SCREEN_HEIGHT || y - radius <= 0) {
-                if (x_speed >= 0)
-                    spin -= 2;
-                else spin += 2;
-                y_speed *= -1;
-                if (y + radius >= SCREEN_HEIGHT)
-                    y = SCREEN_HEIGHT - radius;
-                else y = radius;    
-            }
+            update_ball(&x, &y, &x_speed, &y_speed, radius, &spin);
             
             if (mode == SIN)
             {
