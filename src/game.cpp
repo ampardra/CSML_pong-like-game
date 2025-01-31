@@ -8,6 +8,10 @@ using namespace std;
 extern "C" void update_ball(float* x, float* y, float* x_speed, float* y_speed, int radius, float* spin);
 extern "C" void update_ball_movement(float* y, float* time, float range, int mode, float gravity, float* y_speed, float spin, float* angle);
 extern "C" void update_mode_controls(int* mode, float* time, float* range, float* x_speed, float* y_speed);
+extern "C" void update_ai_paddle(float* y, float speed, float ball_y);
+extern "C" void collision_with_ball(float* x_speed, float* y_speed, float* spin, float velocity, float acceleration);
+extern "C" void limit_movements(float* y, float* speed);
+extern "C" void update_paddle_movement(float* velocity, float* y, float* speed, float* acceleration);
 
 
 //constants 
@@ -74,7 +78,6 @@ class Ball {
                     mode = CURVE;
                     break;
             }
-            
             UpdateTrail();
         }  
 
@@ -88,25 +91,18 @@ class Ball {
 class Paddle {
     protected:
         void LimitMovements() {
-            if (y < 0) {
-                y = 0;
-                speed = 5;
-            }
-            else if(y + 120 > SCREEN_HEIGHT) {
-                y = SCREEN_HEIGHT - 120;
-                speed = 5;
-            }
+            limit_movements(&y, &speed);
         }
     public:
         float x,y;
         float width, height;
         float speed, acceleration;
-        float volacity;
+        float velocity;
         Paddle(float x, float y) : x(x), y(y) {
             speed = 5;
             width = 25;
             height = 120;
-            volacity = 0;
+            velocity = 0;
             acceleration = 0.3;
         }
 
@@ -115,38 +111,12 @@ class Paddle {
         }
 
         void Update() {
-            if (IsKeyDown(KEY_UP))
-            {
-                volacity -= speed;
-                y += volacity;
-                speed += acceleration;
-                acceleration += 0.05;
-            }
-            else if (IsKeyDown(KEY_DOWN))
-            {
-                volacity += speed;
-                y += volacity;
-                speed += acceleration;
-                acceleration += 0.05;
-            }
-            else {
-                speed = 5;
-                acceleration = 0.3;
-                volacity = 0;
-            }
+            update_paddle_movement(&velocity, &y, &speed, &acceleration);
             LimitMovements();
         }
 
         void CollisionWithBall(Ball &ball) {
-            ball.x_speed *= -1;
-            if (volacity > 0) {
-                ball.y_speed += acceleration - 0.3;
-                ball.spin -= acceleration * 10;
-            }
-            else if(volacity < 0) {
-                ball.y_speed -= acceleration - 0.3;
-                ball.spin += acceleration * 10;
-            }
+            collision_with_ball(&ball.x_speed, &ball.y_speed, &ball.spin, velocity, acceleration);
         }
 };
 
@@ -159,13 +129,7 @@ class AI_Paddle : public Paddle {
         }
 
         void Update(Ball ball) {
-            if (ball.y - 5 <= y)
-            {
-                y -= speed;
-            } else if(ball.y + 110 >= y) {
-                y += speed;
-            }
-            LimitMovements();
+            update_ai_paddle(&y, speed, ball.y);
         }
 };
 
