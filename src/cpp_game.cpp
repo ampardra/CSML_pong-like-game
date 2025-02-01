@@ -3,6 +3,9 @@
 #include <cmath>
 #include <queue>
 using namespace std;
+#include <chrono>
+using namespace std;
+using namespace std::chrono;
 
 //constants 
 const int SCREEN_WIDTH = 1200;
@@ -48,7 +51,6 @@ class Ball {
             }
             DrawCircle(x, y, radius, WHITE);
             DrawLineEx({x, y}, {line_x, line_y}, 4, RED);
-            cout << spin << endl;
         }
         //update function which will replace with assembly code 
         void Update() {
@@ -210,14 +212,26 @@ int main () {
     Ball ball = Ball(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     Paddle player = Paddle(10, SCREEN_HEIGHT / 2 - 60);
     AI_Paddle ai = AI_Paddle(SCREEN_WIDTH - 35, SCREEN_HEIGHT / 2 - 60);
-
-    cout << "Game is starting!" << endl;
-
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong");
-    SetTargetFPS(60);
+    //for setting defualt fps in 60
+    int fps = 60;
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong-CPP");
+    SetTargetFPS(fps);
+    //for measuring render time
+    auto lastTime = high_resolution_clock::now();
+    auto currentTime = high_resolution_clock::now();
+    float deltaTime = 0.0f;
 
     while (!WindowShouldClose())
     {
+        currentTime = high_resolution_clock::now();
+        deltaTime = duration_cast<duration<float>>(currentTime - lastTime).count();
+        lastTime = currentTime;
+        //for comparing performance between two games
+        if (IsKeyDown(KEY_I))
+        {   
+            fps = 60 - fps;
+            SetTargetFPS(fps);
+        }
         ball.Update();
         player.Update();
         ai.Update(ball);
@@ -237,9 +251,9 @@ int main () {
             {
                 ai.CollisionWithBall(ball);
             }
-            
+            DrawText(TextFormat("Render time: %f", deltaTime), SCREEN_WIDTH / 4 , 20 , 20, WHITE);    
+
         EndDrawing();
     }
-
     CloseWindow();
 }
