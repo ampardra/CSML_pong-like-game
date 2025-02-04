@@ -6,7 +6,7 @@ section .data
 
 section .text
     global update_key_c
-    extern IsKeyDown           ; Extern function: int IsKeyDown(int key)
+    extern IsKeyPressed           ; Extern function: int IsKeyPressed(int key)
 
 ; update_key_c expects:
 ;   rdi = pointer to mode
@@ -25,7 +25,7 @@ update_key_c:
 
     ; Check if KEY_C is pressed:
     mov edi, KEY_C   ; Load KEY_C into edi
-    call IsKeyDown   ; Call IsKeyDown(KEY_C)
+    call IsKeyPressed   ; Call IsKeyPressed(KEY_C)
     test eax, eax   ; Check if key is pressed
     jz .done        ; If not pressed, exit the function
 
@@ -35,10 +35,6 @@ update_key_c:
     jne .set_curve  ; If mode != CURVE, jump to set_curve
 
     ; Else: mode is already CURVE.
-    ; Set x_speed and y_speed to -5.0, and set mode to LINE.
-    movss xmm0, dword [rel neg_five]  ; Load -5.0 into xmm0
-    movss [r10], xmm0                 ; x_speed = -5.0
-    movss [r11], xmm0                 ; y_speed = -5.0
     mov dword [r8], 0                 ; mode = LINE (0)
     jmp .done
 

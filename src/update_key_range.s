@@ -6,7 +6,7 @@ section .data
 
 section .text
     global update_key_range
-    extern IsKeyDown       ; External function: int IsKeyDown(int key)
+    extern IsKeyPressed       ; External function: int IsKeyPressed(int key)
 
 ; update_key_range expects:
 ;   rdi = pointer to range (float)
@@ -19,7 +19,7 @@ update_key_range:
 
     ; --- Check if KEY_E is pressed ---
     mov edi, KEY_E         ; Load KEY_E into edi
-    call IsKeyDown         ; Call IsKeyDown(KEY_E)
+    call IsKeyPressed         ; Call IsKeyPressed(KEY_E)
     test eax, eax          ; Test if key is pressed
     jz .check_KEY_Q        ; If not pressed, skip to KEY_Q check
 
@@ -31,7 +31,7 @@ update_key_range:
 .check_KEY_Q:
     ; --- Check if KEY_Q is pressed ---
     mov edi, KEY_Q         ; Load KEY_Q into edi
-    call IsKeyDown         ; Call IsKeyDown(KEY_Q)
+    call IsKeyPressed         ; Call IsKeyPressed(KEY_Q)
     test eax, eax          ; Check if key is pressed
     jz .done               ; If not pressed, skip the rest
 

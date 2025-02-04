@@ -3,7 +3,7 @@ section .data
 
 section .text
     global update_key_s
-    extern IsKeyDown
+    extern IsKeyPressed
 
 ; update_key_s expects:
 ;   rdi -> mode (pointer, integer)
@@ -18,7 +18,7 @@ update_key_s:
 
     ; Check if KEY_S is pressed:
     mov edi, KEY_S   ; Use edi for key code argument
-    call IsKeyDown   ; Call IsKeyDown(KEY_S)
+    call IsKeyPressed   ; Call IsKeyPressed(KEY_S)
     test eax, eax    ; Check return value in eax
     jz .done         ; If not pressed, jump to done
 

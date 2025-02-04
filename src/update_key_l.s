@@ -3,7 +3,7 @@ section .data
 
 section .text
     global update_key_l
-    extern IsKeyDown    ; External function: int IsKeyDown(int key);
+    extern IsKeyPressed    ; External function: int IsKeyPressed(int key);
 
 ; update_key_l expects:
 ;   rdi = pointer to mode
@@ -18,7 +18,7 @@ update_key_l:
 
     ; Check if KEY_L is pressed:
     mov edi, KEY_L    ; Load KEY_L constant into edi
-    call IsKeyDown    ; Call IsKeyDown(KEY_L)
+    call IsKeyPressed    ; Call IsKeyPressed(KEY_L)
     test eax, eax     ; Check if the key is pressed (nonzero result)
     jz .done          ; If not pressed, do nothing
 
