@@ -8,20 +8,6 @@
 using namespace std;
 using namespace std::chrono;
 
-//extern assembly functions for updates
-    //ball
-extern "C" void update_ball(float* x, float* y, float* x_speed, float* y_speed, int radius, float* spin);
-extern "C" void update_ball_movement(float* y, float* time, int range, int mode, float gravity, float* y_speed, float* angle, float spin);
-extern "C" void update_key_s(int* mode, float* time);
-extern "C" void update_key_l(int* mode, float* time);
-extern "C" void update_key_c(int* mode, float* time, float* x_speed, float* y_speed);
-extern "C" void update_key_range(float* range);
-    //paddles
-extern "C" void limit_movements(float* y, float* speed);
-extern "C" void update_paddle_movement(float* velocity, float* y, float* speed, float* acceleration);
-extern "C" void collision_with_ball(float* x_speed, float* y_speed, float* spin, float velocity, float acceleration);
-extern "C" void update_ai_paddle(float* y, float speed, float ball_y);
-
 // Constants
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 800;
@@ -103,12 +89,32 @@ void Paddle::Draw() {
 }
 
 void Paddle::Update() {
-    update_paddle_movement(&velocity, &y, &speed, &acceleration);
+    if (IsKeyDown(KEY_UP)) {
+        velocity -= speed;
+        y += velocity;
+        speed += acceleration;
+        acceleration += 0.05;
+    } else if (IsKeyDown(KEY_DOWN)) {
+        velocity += speed;
+        y += velocity;
+        speed += acceleration;
+        acceleration += 0.05;
+    } else {
+        speed = 5;
+        acceleration = 0.3;
+        velocity = 0;
+    }
     LimitMovements();
 }
 
 void Paddle::LimitMovements() {
-    limit_movements(&y, &speed);
+    if (y < 0) {
+        y = 0;
+        speed = 5;
+    } else if (y + 120 > SCREEN_HEIGHT) {
+        y = SCREEN_HEIGHT - 120;
+        speed = 5;
+    }
 }
 
 void Paddle::IncrementScore() {
@@ -116,7 +122,14 @@ void Paddle::IncrementScore() {
 }
 
 void Paddle::CollisionWithBall(Ball &ball) {
-    collision_with_ball(&ball.x_speed, &ball.y_speed, &ball.spin, velocity, acceleration);
+    ball.x_speed *= -1;
+    if (velocity > 0) {
+        ball.y_speed += acceleration - 0.3;
+        ball.spin -= acceleration * 10;
+    } else if (velocity < 0) {
+        ball.y_speed -= acceleration - 0.3;
+        ball.spin += acceleration * 10;
+    }
 }
 
 // AI Paddle Implementation
@@ -138,7 +151,6 @@ void AI_Paddle::Update(Ball ball) {
         else
             y -= speed;
     }
-    //TODO: make assembly for this section
     LimitMovements();
 }
 
@@ -148,8 +160,8 @@ void AI_Paddle::Ai_mode(float speedMode) {
 
 // Ball Implementation
 Ball::Ball(float x, float y) : x(x), y(y) {
-    x_speed = 0;
-    y_speed = 0;
+    x_speed = -5;
+    y_speed = -5;
     radius = 15;
     mode = LINE;
     time = 0;
@@ -192,28 +204,48 @@ void Ball::Update(Paddle &player, AI_Paddle &ai) {
         }
         return;  // Do not move the ball until clicked
     }
+    x += x_speed;
+    y += y_speed;
 
-    //update ball position
-    update_ball(&x, &y, &x_speed, &y_speed, radius, &spin);
-    int MODE = mode;
-    update_ball_movement(&y, &time, range, MODE, gravity, &y_speed, &angle, spin);
-    update_key_s(&MODE, &time);
-    update_key_l(&MODE, &time);
-    update_key_c(&MODE, &time, &x_speed, &y_speed);
-    update_key_range(&range);
-    switch (MODE)
-    {
-        case 0:
-            mode = LINE;
-            break;
-        case 1:
-            mode = SIN;
-            break;
-        default:
-            mode = CURVE;
-            break;
+    if (x + radius >= SCREEN_WIDTH || x - radius <= 0) {
+        if (x_speed >= 0)
+            spin -= 2;
+        else
+            spin += 2;
+        x_speed *= -1;
     }
-    //check scores
+
+    if (y + radius >= SCREEN_HEIGHT || y - radius <= 0) {
+        if (x_speed >= 0)
+            spin -= 2;
+        else
+            spin += 2;
+        y_speed *= -1;
+        if (y + radius >= SCREEN_HEIGHT)
+            y = SCREEN_HEIGHT - radius;
+        else
+            y = radius;
+    }
+
+    if (mode == SIN) {
+        y += range * cos(time);
+        time += 5 / range;
+    }
+    if (mode == CURVE)
+        y_speed += gravity;
+    angle += spin;
+
+    if (IsKeyPressed(KEY_S))
+        mode = (mode != SIN) ? SIN : LINE;
+    if (IsKeyPressed(KEY_L))
+        mode = LINE;
+    if (IsKeyPressed(KEY_C))
+        mode = (mode != CURVE) ? CURVE : LINE;
+    if (IsKeyPressed(KEY_E))
+        range += 2;
+    if (IsKeyPressed(KEY_Q) && range != 5)
+        range -= 2;
+
     if (x + radius >= SCREEN_WIDTH || x - radius <= 0) {
         if (x + radius >= SCREEN_WIDTH) {
             player.IncrementScore();
@@ -239,14 +271,14 @@ void Ball::UpdateTrail() {
 char* Ball::GetMode() {
     switch (mode)
     {
-        case 0:
-            return "Line";
-            break;
-        case 1:
-            return "Sin";
-        default:
-            return "Curve";
-            break;
+    case 0:
+        return "Line";
+        break;
+    case 1:
+        return "Sin";
+    default:
+        return "Curve";
+        break;
     }
 }
 

@@ -2,17 +2,15 @@ section .data
     KEY_C      equ 0x43         ; ASCII code for 'C'
     CURVE_VAL  dd 2             ; CURVE mode value
     LINE_VAL   dd 0             ; LINE mode value
-    neg_five   dd -5.0          ; -5.0 as a float
 
 section .text
     global update_key_c
-    extern IsKeyPressed           ; Extern function: int IsKeyPressed(int key)
+    extern IsKeyDown           ; Extern function: int IsKeyDown(int key)
 
 ; update_key_c expects:
 ;   rdi = pointer to mode
 ;   rsi = pointer to time
-;   rdx = pointer to x_speed
-;   rcx = pointer to y_speed
+
 update_key_c:
     push rbp
     mov rbp, rsp
@@ -20,12 +18,10 @@ update_key_c:
     ; Preserve incoming pointers in registers:
     mov r8, rdi      ; r8 now holds pointer to mode
     mov r9, rsi      ; r9 now holds pointer to time
-    mov r10, rdx     ; r10 now holds pointer to x_speed
-    mov r11, rcx     ; r11 now holds pointer to y_speed
 
     ; Check if KEY_C is pressed:
     mov edi, KEY_C   ; Load KEY_C into edi
-    call IsKeyPressed   ; Call IsKeyPressed(KEY_C)
+    call IsKeyDown   ; Call IsKeyDown(KEY_C)
     test eax, eax   ; Check if key is pressed
     jz .done        ; If not pressed, exit the function
 

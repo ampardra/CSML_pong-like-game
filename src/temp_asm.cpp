@@ -12,7 +12,7 @@ extern "C" void update_ball(float* x, float* y, float* x_speed, float* y_speed, 
 extern "C" void update_ball_movement(float* y, float* time, int range, int mode, float gravity, float* y_speed, float* angle, float spin);
 extern "C" void update_key_s(int* mode, float* time);
 extern "C" void update_key_l(int* mode, float* time);
-extern "C" void update_key_c(int* mode, float* time, float* x_speed, float* y_speed);
+extern "C" void update_key_c(int* mode, float* time);
 extern "C" void update_key_range(float* range);
     //paddles
 extern "C" void limit_movements(float* y, float* speed);
@@ -73,7 +73,7 @@ class Ball {
             update_ball_movement(&y, &time, range, MODE, gravity, &y_speed, &angle, spin);
             update_key_s(&MODE, &time);
             update_key_l(&MODE, &time);
-            update_key_c(&MODE, &time, &x_speed, &y_speed);
+            update_key_c(&MODE, &time);
             update_key_range(&range);
             switch (MODE)
             {
