@@ -29,11 +29,9 @@ limit_movements:
     jmp .done
 
 .set_lower:
-    ; y < 0: set y = 0 and speed = 5
+    ; y < 0: set y = 0
     movss xmm0, dword [zero]
     movss [rdi], xmm0     ; y = 0.0
-    movss xmm0, dword [five]
-    movss [rsi], xmm0     ; speed = 5.0
     jmp .done
 
 .set_upper:
@@ -42,8 +40,6 @@ limit_movements:
     movss xmm0, dword [screen_height]
     subss xmm0, dword [one_twenty]
     movss [rdi], xmm0     ; y = SCREEN_HEIGHT - 120
-    movss xmm0, dword [five]
-    movss [rsi], xmm0     ; speed = 5.0
 
 .done:
     xor rax, rax
