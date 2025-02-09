@@ -4,27 +4,19 @@
 #include <queue>
 #include <chrono>
 #include <string>
+#include <fstream>
 using namespace std;
 using namespace std::chrono;
 
 // Enums
 enum MovementMode { LINE, SIN, CURVE };
-enum GameState {Login, GameMenu, Game};
 
 // Constants and vals
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 800;
 const int TRAIL_LENGTH = 20;
 const int DEFAULT_FPS = 60;
-// Login menu vals
-string usernameInput = "";
-string passwordInput = "";
-bool showPassword = false;
-bool usernameActive = false;
-bool passwordActive = false;
-bool loginButtonPressed = false;
-// General Game state
-GameState state = Login;
+
 
 // Class Declarations
 class Ball;
@@ -36,8 +28,7 @@ void InitGame(Ball& ball, Paddle& player, AI_Paddle& ai);
 void UpdateGame(Ball& ball, Paddle& player, AI_Paddle& ai, int& playerScore, int& aiScore, float deltaTime, float* maxFPS);
 void DrawGame(Ball& ball, Paddle& player, AI_Paddle& ai, float deltaTime, int playerScore, int aiScore, float maxFPS);
 void ResetBall(Ball& ball);
-void DrawLoginScreen();
-void HandleLoginInput();
+
 
 // Ball Class
 class Ball {
@@ -53,7 +44,7 @@ public:
     void Draw() const;
     void Update();
     void UpdateTrail();
-    char* GetMode();
+    string GetMode();
 };
 
 Ball::Ball(float x, float y)
@@ -123,7 +114,7 @@ void Ball::UpdateTrail() {
         trail.pop_back();
 }
 
-char* Ball::GetMode() {
+string Ball::GetMode() {
     switch (mode)
     {
     case 0:
@@ -252,51 +243,37 @@ int main() {
 
     // Max FPS variable for comparing asm and cpp
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong-CPP");
-    int fps = DEFAULT_FPS;
+    int fps = 0;
     SetTargetFPS(fps);
 
     auto lastTime = high_resolution_clock::now(), currentTime = high_resolution_clock::now();
     float deltaTime = 0.0f;
     float maxFPS = 0;
     while (!WindowShouldClose()) {
-        if (state == Login || state == GameMenu)
-        {
-            BeginDrawing();
-            ClearBackground(DARKGRAY);
+        
+        currentTime = high_resolution_clock::now();
+        deltaTime = duration_cast<duration<float>>(currentTime - lastTime).count();
+        lastTime = currentTime;
 
-            if (state == Login) {
-                HandleLoginInput();
-                DrawLoginScreen();
-            } else if (state == GameMenu) {
-                ClearBackground(BLACK);
-                DrawText("Welcome to Pong!", SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2, 40, WHITE);
-                DrawText("Press ENTER to start", SCREEN_WIDTH / 2 - 160, SCREEN_HEIGHT / 2 + 50, 30, GREEN);
-                if (IsKeyPressed(KEY_ENTER)) {
-                    state = Game;// Move to game logic
-                }
-            }
-
-            EndDrawing();
+        // Change fps mode
+        if (IsKeyPressed(KEY_I)) {
+            fps = DEFAULT_FPS - fps;
+            SetTargetFPS(fps);
         }
-        else if (state == Game)
-        {
-            currentTime = high_resolution_clock::now();
-            deltaTime = duration_cast<duration<float>>(currentTime - lastTime).count();
-            lastTime = currentTime;
+        
 
-            // Change fps mode
-            if (IsKeyPressed(KEY_I)) {
-                fps = 60 - fps;
-                SetTargetFPS(fps);
-            }
-
-            // Update game objects and check scoring
-            UpdateGame(ball, player, ai, playerScore, aiScore, deltaTime, &maxFPS);
-            DrawGame(ball, player, ai, deltaTime, playerScore, aiScore, maxFPS);
-        }
+        // Update game objects and check scoring
+        UpdateGame(ball, player, ai, playerScore, aiScore, deltaTime, &maxFPS);
+        DrawGame(ball, player, ai, deltaTime, playerScore, aiScore, maxFPS);
     }
 
     CloseWindow();
+    ofstream file("../../data/cpp.log", std::ios::app);
+    if (file.is_open())
+    {
+        file << maxFPS << '\n';
+        file.close();
+    }
     return 0;
 }
 
@@ -335,71 +312,11 @@ void DrawGame(Ball& ball, Paddle& player, AI_Paddle& ai, float deltaTime, int pl
     ai.Draw();
 
     // Draw Ball mode information
-    DrawText(TextFormat("Mode: %s", ball.GetMode()), SCREEN_WIDTH / 4, 20, 20, WHITE);
+    DrawText(TextFormat("Mode: %s", ball.GetMode().c_str()), SCREEN_WIDTH / 4, 20, 20, WHITE);
     // Draw scores at the top center
     DrawText(TextFormat("Player: %d", playerScore), SCREEN_WIDTH / 2 - 400, SCREEN_HEIGHT - 50, 40, BLUE);
     DrawText(TextFormat("AI: %d", aiScore), SCREEN_WIDTH / 2 + 300, SCREEN_HEIGHT - 50, 40, GREEN);
     // Draw max fps that has been observed
     DrawText(TextFormat("Max FPS: %f", maxFPS), SCREEN_WIDTH / 2 + 80, 20, 30, RED);
     EndDrawing();
-}
-
-void DrawLoginScreen() {
-    DrawText("Login to Pong", SCREEN_WIDTH / 2 - 100, 200, 40, WHITE);
-    
-    // Username Field
-    DrawText("Username:", SCREEN_WIDTH / 2 - 150, 300, 30, LIGHTGRAY);
-    DrawRectangle(SCREEN_WIDTH / 2 - 150, 340, 300, 40, usernameActive ? LIGHTGRAY : RAYWHITE);
-    DrawText(usernameInput.c_str(), SCREEN_WIDTH / 2 - 140, 350, 30, BLACK);
-    
-    // Password Field
-    DrawText("Password:", SCREEN_WIDTH / 2 - 150, 400, 30, LIGHTGRAY);
-    DrawRectangle(SCREEN_WIDTH / 2 - 150, 440, 300, 40, passwordActive ? LIGHTGRAY : RAYWHITE);
-    string displayedPassword = showPassword ? passwordInput : string(passwordInput.length(), '*');
-    DrawText(displayedPassword.c_str(), SCREEN_WIDTH / 2 - 140, 450, 30, BLACK);
-    
-    // Toggle Password Visibility
-    DrawText("Press TAB to toggle password visibility", SCREEN_WIDTH / 2 - 200, 500, 20, LIGHTGRAY);
-    
-    // Login Button
-    DrawRectangle(SCREEN_WIDTH / 2 - 80, 550, 160, 50, GREEN);
-    DrawText("LOGIN", SCREEN_WIDTH / 2 - 30, 565, 30, BLACK);
-    
-    // Register Button
-    DrawRectangle(SCREEN_WIDTH / 2 - 80, 620, 160, 50, BLUE);
-    DrawText("REGISTER", SCREEN_WIDTH / 2 - 50, 635, 30, WHITE);
-}
-
-void HandleLoginInput() {
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        Vector2 mousePoint = GetMousePosition();
-        usernameActive = CheckCollisionPointRec(mousePoint, { SCREEN_WIDTH / 2 - 150, 340, 300, 40 });
-        passwordActive = CheckCollisionPointRec(mousePoint, { SCREEN_WIDTH / 2 - 150, 440, 300, 40 });
-        loginButtonPressed = CheckCollisionPointRec(mousePoint, {SCREEN_WIDTH / 2 - 80, 550, 160, 50});
-    }
-    
-    int key = GetCharPressed();
-    while (key > 0) {
-        if (usernameActive && usernameInput.length() < 10) {
-            usernameInput += (char)key;
-        } else if (passwordActive && passwordInput.length() < 10) {
-            passwordInput += (char)key;
-        }
-        key = GetCharPressed();
-    }
-
-    if (loginButtonPressed && !usernameInput.empty() && !passwordInput.empty())
-    {
-       state = GameMenu;        
-    }
-    
-    
-    if (IsKeyPressed(KEY_BACKSPACE)) {
-        if (usernameActive && !usernameInput.empty()) usernameInput.pop_back();
-        else if (passwordActive && !passwordInput.empty()) passwordInput.pop_back();
-    }
-    if (IsKeyPressed(KEY_TAB)) showPassword = !showPassword;
-    if (IsKeyPressed(KEY_ENTER) && !usernameInput.empty() && !passwordInput.empty()) {
-        state = GameMenu;
-    }
 }

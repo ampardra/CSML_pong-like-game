@@ -406,7 +406,7 @@ class Menu {
                         UnloadMusicStream(bgMusic); // Clean up music
                         CloseAudioDevice(); // Close audio
                     }
-                    ofstream file("../../data/asm.dat", std::ios::app);
+                    ofstream file("../../data/asm.log", std::ios::app);
                     if (file.is_open())
                     {
                         file << maxFPS << '\n';
